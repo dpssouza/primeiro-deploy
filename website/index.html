@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Laboratório de tecnologia e DevOps do CETEP-I Itaparica. Aprendizagem prática com Docker, Nginx e AWS.">
+    <meta name="theme-color" content="#14213d">
+    <title>CETEP-I Itaparica | Laboratório de Tecnologia e DevOps</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header class="site-header">
+        <nav class="navbar container" aria-label="Navegação principal">
+            <a class="brand" href="#home" aria-label="CETEP-I Itaparica - início">
+                <img src="assets/logo-cetep-i.jpg" alt="Logomarca do Centro Territorial de Educação Profissional de Itaparica">
+                <span class="brand-text">
+                    <strong>CETEP-I</strong>
+                    <small>ITAPARICA</small>
+                </span>
+            </a>
+            <button class="menu-toggle" id="menu-toggle" aria-label="Abrir menu" aria-expanded="false">
+                <span></span><span></span><span></span>
+            </button>
+            <div class="nav-menu" id="nav-menu">
+                <a href="#home" class="nav-link">Início</a>
+                <a href="#sobre" class="nav-link">O laboratório</a>
+                <a href="#tecnologias" class="nav-link">Tecnologias</a>
+                <a href="#status" class="nav-link">Status</a>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section id="home" class="hero">
+            <div class="hero-shape shape-one"></div>
+            <div class="hero-shape shape-two"></div>
+            <div class="container hero-content">
+                <div class="hero-copy">
+                    <span class="eyebrow"><span class="eyebrow-dot"></span> EDUCAÇÃO PROFISSIONAL • TECNOLOGIA</span>
+                    <h1>Parabéns! Seu primeiro<br><span>deploy foi concluído!</span></h1>
+                    <p class="hero-subtitle">O laboratório está no ar! Seu site foi publicado com sucesso utilizando Docker e Nginx.</p>
+                    <div class="hero-actions">
+                        <a class="btn btn-primary" href="#tecnologias">Conheça o laboratório <span aria-hidden="true">→</span></a>
+                        <button class="btn btn-outline" type="button" onclick="showInfo()">Sobre o ambiente</button>
+                    </div>
+                    <div class="hero-note">
+                        <span class="note-line"></span>
+                        <span>Construindo saberes por meio da prática.</span>
+                    </div>
+                </div>
+                <div class="hero-brand-panel">
+                    <div class="logo-frame">
+                        <img src="assets/logo-cetep-i.jpg" alt="Logomarca oficial do CETEP-I Itaparica">
+                    </div>
+                    <p>Centro Territorial de Educação Profissional de Itaparica</p>
+                    <span class="panel-caption">CETEP-I • ITAPARICA • BAHIA</span>
+                </div>
+            </div>
+            <div class="hero-bottom container">
+                <span>LABORATÓRIO DE TECNOLOGIA</span>
+                <span class="bottom-line"></span>
+                <span>DO CONHECIMENTO À PRÁTICA</span>
+            </div>
+        </section>
+
+        <section id="sobre" class="section about-section">
+            <div class="container">
+                <div class="section-heading">
+                    <span class="section-kicker">NOSSA PROPOSTA</span>
+                    <h2>Tecnologia se aprende <span>na prática.</span></h2>
+                    <p>Este laboratório apresenta conceitos e ferramentas utilizados no desenvolvimento e na disponibilização de aplicações. A proposta é aproximar os conteúdos estudados das situações encontradas no mundo do trabalho.</p>
+                </div>
+                <div class="lab-intro">
+                    <div class="lab-intro-copy">
+                        <span class="mini-label">O QUE VOCÊ VAI FAZER</span>
+                        <h3>Do computador local até um site acessível pela internet.</h3>
+                        <p>Neste primeiro deploy, você vai acompanhar o caminho completo de publicação de uma página estática. A atividade é guiada: cada etapa apresenta um conceito, um comando e o resultado esperado.</p>
+                    </div>
+                    <div class="lab-outcome"><span aria-hidden="true">🎯</span><div><strong>Ao final da prática</strong><p>Você terá publicado um site em um servidor na nuvem e saberá explicar, em linhas gerais, como o navegador chega até ele.</p></div></div>
+                </div>
+                <div class="feature-grid">
+                    <article class="feature-card">
+                        <div class="feature-number">01</div><div class="feature-icon" aria-hidden="true">🖥️</div>
+                        <h3>Preparar o ambiente</h3>
+                        <p>Acessar uma máquina virtual Linux na AWS por SSH, reconhecer o terminal e conferir os recursos básicos do servidor.</p>
+                        <ul><li>Conexão SSH</li><li>Comandos básicos do Linux</li><li>Pastas e arquivos do projeto</li></ul>
+                    </article>
+                    <article class="feature-card">
+                        <div class="feature-number">02</div><div class="feature-icon" aria-hidden="true">🐳</div>
+                        <h3>Empacotar e executar</h3>
+                        <p>Entender a função do Docker e executar um servidor web em um container, sem instalar o Nginx diretamente no sistema.</p>
+                        <ul><li>Imagem e container</li><li>Mapeamento de portas</li><li>Docker Compose</li></ul>
+                    </article>
+                    <article class="feature-card">
+                        <div class="feature-number">03</div><div class="feature-icon" aria-hidden="true">🌐</div>
+                        <h3>Publicar e testar</h3>
+                        <p>Disponibilizar os arquivos do site, liberar o acesso necessário e testar a página pelo navegador.</p>
+                        <ul><li>Servidor Nginx</li><li>Porta de acesso HTTP</li><li>Teste externo do deploy</li></ul>
+                    </article>
+                </div>
+                <div class="lab-flow" aria-label="Fluxo do primeiro deploy">
+                    <span>Arquivos do site</span><b>→</b><span>Docker</span><b>→</b><span>Container Nginx</span><b>→</b><span>Navegador</span>
+                </div>
+            </div>
+        </section>
+
+        <section id="tecnologias" class="section technology-section">
+            <div class="container">
+                <div class="section-heading section-heading-light">
+                    <span class="section-kicker">FERRAMENTAS DO LABORATÓRIO</span>
+                    <h2>Conhecimento conectado <span>à realidade.</span></h2>
+                    <p>Durante as atividades, exploramos tecnologias presentes em ambientes profissionais de desenvolvimento e infraestrutura.</p>
+                </div>
+                <div class="technology-grid technology-grid-detailed">
+                    <article class="technology-card">
+                        <div class="technology-icon docker-icon">🐳</div><div><h3>Docker Engine</h3>
+                        <p>Plataforma de containers instalada no servidor Linux. Executa o ambiente isolado que contém o servidor web.</p>
+                        <ul><li><strong>Imagem:</strong> pacote usado como base para criar o container.</li><li><strong>Container:</strong> instância em execução da imagem.</li><li><strong>Portas:</strong> conectam uma porta do servidor à porta do serviço no container.</li></ul></div><span class="card-index">01</span>
+                    </article>
+                    <article class="technology-card">
+                        <div class="technology-icon nginx-icon">N</div><div><h3>Nginx</h3>
+                        <p>Servidor HTTP que entrega os arquivos estáticos do site (HTML, CSS, JavaScript e imagens) ao navegador.</p>
+                        <ul><li>Recebe requisições HTTP.</li><li>Localiza e entrega o arquivo solicitado.</li><li>Utiliza a porta 80 dentro do container, conforme a configuração apresentada.</li></ul></div><span class="card-index">02</span>
+                    </article>
+                    <article class="technology-card">
+                        <div class="technology-icon aws-icon">☁</div><div><h3>AWS EC2 e Ubuntu</h3>
+                        <p>O EC2 fornece a máquina virtual na nuvem. O Ubuntu é o sistema operacional usado para administrar o servidor.</p>
+                        <ul><li>Acesso administrativo remoto por SSH.</li><li>Docker é executado no sistema Linux.</li><li>Regras de rede/firewall controlam as portas acessíveis externamente.</li></ul></div><span class="card-index">03</span>
+                    </article>
+                    <article class="technology-card">
+                        <div class="technology-icon compose-icon">⚙</div><div><h3>Docker Compose</h3>
+                        <p>Ferramenta usada para descrever e administrar os serviços do ambiente por meio de um arquivo YAML.</p>
+                        <ul><li>Define imagem e nome do serviço.</li><li>Configura portas e reinicialização.</li><li>Facilita iniciar, parar e consultar os containers.</li></ul></div><span class="card-index">04</span>
+                    </article>
+                    <article class="technology-card">
+                        <div class="technology-icon terminal-icon">⌘</div><div><h3>Linux e SSH</h3>
+                        <p>O terminal permite administrar a instância remotamente e executar comandos de diagnóstico e implantação.</p>
+                        <ul><li><code>ls</code>, <code>cd</code> e <code>pwd</code>: navegação.</li><li><code>docker compose ps</code>: consulta serviços.</li><li><code>docker logs</code>: consulta registros.</li></ul></div><span class="card-index">05</span>
+                    </article>
+                    <article class="technology-card">
+                        <div class="technology-icon browser-icon">🌍</div><div><h3>HTTP e navegador</h3>
+                        <p>O navegador faz a requisição ao endereço público e apresenta o conteúdo devolvido pelo Nginx.</p>
+                        <ul><li>HTTP é o protocolo usado no teste demonstrativo.</li><li>A porta publicada no host encaminha a requisição ao container.</li><li>O teste confirma a disponibilidade da página, não a saúde de todos os recursos da AWS.</li></ul></div><span class="card-index">06</span>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section id="status" class="section status-section">
+            <div class="container status-container">
+                <div class="status-intro">
+                    <span class="section-kicker">AMBIENTE DE EXECUÇÃO</span>
+                    <h2>Visão geral do <span>servidor.</span></h2>
+                    <p>Conheça os componentes envolvidos na publicação e o papel de cada um no ambiente.</p>
+                    <button class="btn btn-primary" type="button" onclick="updateStatus()">Ver detalhes do ambiente <span aria-hidden="true">↗</span></button>
+                </div>
+                <div class="status-panel">
+                    <div class="status-panel-header"><span class="status-indicator"></span><strong>RESUMO DA ARQUITETURA</strong><span class="status-live">CONFIGURAÇÃO DO LAB</span></div>
+                    <div class="status-row"><span>Provedor de nuvem</span><strong>Amazon Web Services (AWS)</strong></div>
+                    <div class="status-row"><span>Máquina virtual</span><strong>Amazon EC2</strong></div>
+                    <div class="status-row"><span>Sistema operacional</span><strong>Ubuntu Linux</strong></div>
+                    <div class="status-row"><span>Execução de serviços</span><strong>Docker / Docker Compose</strong></div>
+                    <div class="status-row"><span>Servidor web</span><strong>Nginx em container</strong></div>
+                    <div class="status-row"><span>Portas do laboratório</span><strong>8081 (host) → 80 (container)</strong></div>
+                    <div class="status-row"><span>Acesso administrativo</span><strong>SSH</strong></div>
+                    <p class="status-disclaimer">Este painel descreve a arquitetura didática apresentada no laboratório. Como o site é estático, ele não consulta em tempo real a instância EC2, os containers, o uso de CPU/memória ou o estado dos serviços. O teste mostrado no navegador utiliza a porta 8081 no endereço público, encaminhada para a porta 80 do Nginx. A página não consulta o estado real dos serviços.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="container footer-content">
+            <a class="footer-brand" href="#home">
+                <img src="assets/logo-cetep-i.jpg" alt="">
+                <span><strong>CETEP-I ITAPARICA</strong><small>Construindo saberes</small></span>
+            </a>
+            <p>Educação profissional, conhecimento e tecnologia.</p>
+            <span class="footer-tag">BAHIA • BRASIL</span>
+        </div>
+    </footer>
+
+    <div class="modal-backdrop" id="environment-modal" hidden>
+        <section class="environment-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+            <button class="modal-close" type="button" aria-label="Fechar janela" data-close-modal>×</button>
+            <span class="modal-kicker">CETEP-I • LABORATÓRIO DE TECNOLOGIA</span>
+            <h2 id="modal-title">Como o ambiente funciona</h2>
+            <p class="modal-lead">O site é publicado em uma máquina virtual na nuvem. O Docker executa o Nginx em um container, e o Nginx entrega os arquivos da página ao navegador.</p>
+            <div class="modal-steps">
+                <article><span>01</span><div><strong>AWS EC2 + Ubuntu</strong><p>Máquina virtual que hospeda o ambiente. O acesso administrativo é realizado remotamente por SSH.</p></div></article>
+                <article><span>02</span><div><strong>Docker Engine</strong><p>Executa os containers de forma isolada, utilizando imagens como base.</p></div></article>
+                <article><span>03</span><div><strong>Container Nginx</strong><p>Servidor web que recebe requisições HTTP e entrega HTML, CSS, JavaScript e imagens.</p></div></article>
+                <article><span>04</span><div><strong>Portas e rede</strong><p>A porta publicada no servidor encaminha o tráfego para a porta 80 do Nginx dentro do container. As regras de segurança da AWS controlam o acesso externo.</p></div></article>
+                <article><span>05</span><div><strong>Navegador</strong><p>O visitante acessa o endereço público e visualiza a página disponibilizada pelo servidor web.</p></div></article>
+            </div>
+            <div class="modal-note"><strong>Importante:</strong> esta página apresenta a arquitetura configurada para a prática. Ela não possui integração de monitoramento em tempo real; portanto, não afirma que os containers estão ativos neste exato momento.</div>
+            <button class="btn btn-primary modal-action" type="button" data-close-modal>Entendi</button>
+        </section>
+    </div>
+    <script src="js/script.js"></script>
+</body>
+</html>
