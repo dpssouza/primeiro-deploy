@@ -57,7 +57,7 @@ Vamos seguir este caminho:
 | Imagem | Pacote que contém o necessário para criar e iniciar um container. É como um molde ou modelo. |
 | Container | Instância criada a partir de uma imagem. É o ambiente que está executando. |
 | Nginx | Servidor web que recebe solicitações HTTP e entrega os arquivos do site ao navegador. |
-| Porta | Número usado para identificar um serviço de rede. Nesta prática, usaremos 8080 no servidor e 80 dentro do container. |
+| Porta | Número usado para identificar um serviço de rede. Neste laboratório, usaremos a porta 80 no computador local, na EC2 e dentro do container. |
 | Security Group | Firewall virtual da AWS que controla quais conexões podem chegar à EC2. |
 
 ## 1.2 Diferença entre Dockerfile, imagem e container
@@ -84,12 +84,12 @@ VS CODE + DOCKER DESKTOP
           v
     IMAGEM DOCKER
           |
-          | docker run -p 8080:80
+          | docker run -p 80:80
           v
   CONTAINER COM NGINX
           |
           v
-  http://localhost:8080
+  http://localhost
 ```
 
 **Parte 2 – Na AWS EC2:**
@@ -108,13 +108,13 @@ AWS EC2 – UBUNTU
 CONTAINER COM NGINX
   Nginx escutando na porta 80
        |
-       | encaminhamento de portas: 8080 -> 80
+       | encaminhamento de portas: 80 -> 80
        v
 NAVEGADOR DO VISITANTE
-  http://IP_PUBLICO_DA_EC2:8080
+  http://IP_PUBLICO_DA_EC2
 ```
 
-**Em palavras simples:** primeiro, o navegador do próprio aluno acessa `localhost:8080` para testar o site no computador. Depois, na EC2, o visitante acessa a porta 8080 do endereço público. Nos dois casos, o Docker encaminha a conexão para a porta 80 do container, onde o Nginx entrega os arquivos do site.
+**Em palavras simples:** primeiro, o navegador do próprio aluno acessa `http://localhost` para testar o site no computador. Na EC2, o visitante acessa diretamente o IP público, também sem informar uma porta na URL. Nos dois casos, utilizaremos a porta 80 na máquina local ou no servidor e a porta 80 dentro do container.
 
 ---
 
@@ -692,7 +692,7 @@ Se aparecer `laboratorio-cetepi` com a tag `v1`, podemos iniciar um container us
 No terminal integrado do VS Code, ainda na pasta do projeto, execute:
 
 ```powershell
-docker run -d --name laboratorio-cetepi-local -p 8080:80 laboratorio-cetepi:v1
+docker run -d --name laboratorio-cetepi-local -p 80:80 laboratorio-cetepi:v1
 ```
 
 Vamos entender cada parte:
@@ -701,10 +701,10 @@ Vamos entender cada parte:
 - `run`: cria e inicia um container a partir de uma imagem.
 - `-d`: executa o container em segundo plano, sem prender o terminal.
 - `--name laboratorio-cetepi-local`: define o nome do container. Usamos o sufixo `-local` para deixar claro que este container está no computador do aluno.
-- `-p 8080:80`: encaminha a porta 8080 do computador para a porta 80 do container.
+- `-p 80:80`: encaminha a porta 80 do computador para a porta 80 do container.
 - `laboratorio-cetepi:v1`: nome e tag da imagem que será utilizada para criar o container.
 
-**Entenda o mapeamento `8080:80`:** o primeiro número (`8080`) é a porta do computador. O segundo número (`80`) é a porta dentro do container, onde o Nginx está escutando.
+**Entenda o mapeamento `80:80`:** o primeiro número (`80`) é a porta do computador. O segundo número (`80`) é a porta dentro do container, onde o Nginx está escutando.
 
 Se o comando retornar um código longo, formado por letras e números, isso indica que o Docker criou o container.
 
@@ -719,7 +719,7 @@ docker ps
 - `docker`: chama o programa Docker.
 - `ps`: lista os containers que estão em execução.
 
-Procure o container `laboratorio-cetepi-local`. Na coluna `PORTS`, deve aparecer algo semelhante a `0.0.0.0:8080->80/tcp`. Isso indica que a porta 8080 do computador foi encaminhada para a porta 80 do container.
+Procure o container `laboratorio-cetepi-local`. Na coluna `PORTS`, deve aparecer algo semelhante a `0.0.0.0:80->80/tcp`. Isso indica que a porta 80 do computador foi encaminhada para a porta 80 do container.
 
 Se o container não aparecer, execute `docker ps -a` para listar também os containers parados.
 
@@ -728,14 +728,14 @@ Se o container não aparecer, execute `docker ps -a` para listar também os cont
 Abra o navegador no próprio computador e digite o endereço:
 
 ```text
-http://localhost:8080
+http://localhost
 ```
 
-`localhost` significa o próprio computador. Como publicamos a porta 8080 do computador, o navegador consegue acessar o Nginx que está dentro do container.
+`localhost` significa o próprio computador. Como publicamos a porta 80 do computador, o navegador consegue acessar o Nginx que está dentro do container.
 
 **Resultado esperado:** a página inicial do projeto deve aparecer no navegador. Confira se o texto, as imagens, o CSS e os demais elementos do site estão sendo exibidos corretamente.
 
-> Se a página não abrir, confira se o Docker Desktop está em execução, se o container aparece em `docker ps` e se o endereço foi digitado exatamente como `http://localhost:8080`. A seção de solução de problemas também poderá ajudar.
+> Se a página não abrir, confira se o Docker Desktop está em execução, se o container aparece em `docker ps` e se o endereço foi digitado exatamente como `http://localhost`. A seção de solução de problemas também poderá ajudar.
 
 ## 6.5 Consultar os logs, se necessário
 
@@ -798,7 +798,6 @@ Crie as regras de entrada:
 | Tipo | Protocolo | Porta | Origem | Para que serve |
 |---|---|---:|---|---|
 | SSH | TCP | 22 | Meu IP | Permite administrar a EC2 pelo terminal |
-| Custom TCP | TCP | 8080 | 0.0.0.0/0 | Permite que visitantes acessem o site |
 
 Explicando os campos:
 
@@ -807,9 +806,7 @@ Explicando os campos:
 - **Porta:** número do serviço que será acessado.
 - **Origem:** de onde a conexão pode partir.
 - **Meu IP:** limita o SSH ao endereço de internet que você está utilizando no momento.
-- **0.0.0.0/0:** significa qualquer endereço IPv4. É usado aqui para permitir que visitantes acessem o site.
-
-**Atenção:** não deixe SSH aberto para toda a internet sem necessidade. A porta 8080 ficará pública para permitir a visita ao site.
+**Importante:** nesta etapa, configure somente a regra SSH. As demais regras de acesso serão trabalhadas posteriormente durante a aula.
 
 ## 7.4 Lançar a instância
 
@@ -1232,7 +1229,7 @@ Procure a imagem `laboratorio-cetepi` com a tag `v1`.
 Execute:
 
 ```bash
-sudo docker run -d --name laboratorio-cetepi --restart unless-stopped -p 8080:80 laboratorio-cetepi:v1
+sudo docker run -d --name laboratorio-cetepi --restart unless-stopped -p 80:80 laboratorio-cetepi:v1
 ```
 
 Agora vamos entender cada parte, sem pular nenhuma:
@@ -1246,28 +1243,28 @@ Agora vamos entender cada parte, sem pular nenhuma:
 - `--restart`: define a política de reinicialização do container.
 - `unless-stopped`: política que permite reiniciar o container automaticamente quando o Docker ou o servidor reiniciar, exceto se ele tiver sido parado manualmente.
 - `-p`: publica/mapeia uma porta do servidor para uma porta do container.
-- `8080:80`: porta 8080 da EC2 encaminhada para a porta 80 do container.
+- `80:80`: porta 80 da EC2 encaminhada para a porta 80 do container.
 - `laboratorio-cetepi:v1`: imagem e tag que serão utilizadas para criar o container.
 
-### 12.2 Entender o mapeamento de portas 8080:80
+### 12.2 Entender o mapeamento de portas 80:80
 
 ```text
--p 8080:80
-   |    |
-   |    +---- Porta 80 dentro do container (Nginx)
+-p 80:80
+   |  |
+   |  +---- Porta 80 dentro do container (Nginx)
    |
-   +--------- Porta 8080 da EC2 (servidor)
+   +------- Porta 80 da EC2 (servidor)
 ```
 
 Quando o visitante digita:
 
 ```text
-http://IP_PUBLICO_DA_EC2:8080
+http://IP_PUBLICO_DA_EC2
 ```
 
-a conexão chega à porta 8080 da EC2. O Docker encaminha a conexão para a porta 80 do container. O Nginx recebe a solicitação e entrega o site.
+a conexão chega à porta 80 da EC2. O Docker encaminha a conexão para a porta 80 do container. O Nginx recebe a solicitação e entrega o site.
 
-**Atenção:** para isso funcionar, a porta TCP 8080 também precisa estar liberada no Security Group da EC2.
+**Atenção:** para isso funcionar, a porta TCP 80 precisa estar liberada no Security Group da EC2.
 
 ## 12.3 Conferir o container
 
@@ -1281,9 +1278,9 @@ Procure:
 
 - nome: `laboratorio-cetepi`;
 - status: `Up`;
-- portas: algo semelhante a `0.0.0.0:8080->80/tcp`.
+- portas: algo semelhante a `0.0.0.0:80->80/tcp`.
 
-O trecho `0.0.0.0:8080->80/tcp` indica que a porta 8080 está publicada nas interfaces IPv4 do servidor e encaminhada à porta 80 do container.
+O trecho `0.0.0.0:80->80/tcp` indica que a porta 80 está publicada nas interfaces IPv4 do servidor e encaminhada à porta 80 do container.
 
 Para listar também containers parados:
 
@@ -1318,13 +1315,13 @@ sudo docker logs -f laboratorio-cetepi
 No navegador do computador, digite:
 
 ```text
-http://IP_PUBLICO_DA_EC2:8080
+http://IP_PUBLICO_DA_EC2
 ```
 
 Exemplo fictício:
 
 ```text
-http://54.123.45.67:8080
+http://54.123.45.67
 ```
 
 Substitua pelo IP público da sua EC2.
@@ -1347,7 +1344,7 @@ Se a página do CETEP-I aparecer, o deploy foi realizado.
 Na EC2, execute:
 
 ```bash
-curl -I http://localhost:8080
+curl -I http://localhost
 ```
 
 Explicação:
@@ -1356,7 +1353,7 @@ Explicação:
 - `-I`: solicita apenas os cabeçalhos da resposta HTTP.
 - `http://`: protocolo utilizado.
 - `localhost`: a própria máquina EC2.
-- `:8080`: porta publicada no servidor.
+- `localhost` sem número de porta utiliza a porta HTTP padrão 80.
 
 Se o serviço responder com um código HTTP como `200 OK`, é um sinal de que o Nginx está entregando a resposta. Outros códigos podem indicar redirecionamento ou algum problema que precisa ser investigado.
 
@@ -1379,7 +1376,7 @@ sudo systemctl status docker --no-pager
 Consulta se o serviço Docker está ativo.
 
 ```bash
-curl -I http://localhost:8080
+curl -I http://localhost
 ```
 
 Testa a resposta HTTP do site pela própria EC2.
@@ -1444,7 +1441,7 @@ sudo docker rm laboratorio-cetepi
 ## 14.5 Criar o container com a nova imagem
 
 ```bash
-sudo docker run -d --name laboratorio-cetepi --restart unless-stopped -p 8080:80 laboratorio-cetepi:v2
+sudo docker run -d --name laboratorio-cetepi --restart unless-stopped -p 80:80 laboratorio-cetepi:v2
 ```
 
 Agora o container será criado usando a imagem `v2`.
@@ -1525,8 +1522,8 @@ Verifique:
 
 1. A EC2 está ligada?
 2. O IP público está correto?
-3. Você colocou `:8080` no endereço?
-4. O Security Group permite entrada TCP na porta 8080?
+3. Você digitou o endereço `http://IP_PUBLICO_DA_EC2` sem acrescentar uma porta?
+4. O Security Group permite entrada TCP na porta 80?
 5. O container está em execução?
 
 Confira:
@@ -1541,7 +1538,7 @@ Se não aparecer, verifique também os containers parados:
 sudo docker ps -a
 ```
 
-## Problema 5 – A porta 8080 já está em uso
+## Problema 5 – A porta 80 já está em uso
 
 Pode existir outro container ou serviço utilizando a porta.
 
@@ -1659,7 +1656,7 @@ Marque cada etapa quando terminar:
 - [ ] Construí a imagem Docker no computador.
 - [ ] Executei o container localmente com `docker run`.
 - [ ] Conferi o container com `docker ps`.
-- [ ] Abri o site em `http://localhost:8080` e verifiquei seu funcionamento.
+- [ ] Abri o site em `http://localhost` e verifiquei seu funcionamento.
 - [ ] Consultei os logs, se necessário, e parei o container local.
 - [ ] Criei ou recebi uma instância EC2 Ubuntu.
 - [ ] Configurei o Security Group.
@@ -1668,7 +1665,7 @@ Marque cada etapa quando terminar:
 - [ ] Enviei os arquivos para a EC2.
 - [ ] Construí a imagem no servidor.
 - [ ] Executei o container na EC2.
-- [ ] Acessei o site pelo IP público e pela porta 8080.
+- [ ] Acessei o site pelo IP público da EC2 usando a porta HTTP padrão 80.
 - [ ] Consultei os logs e verifiquei o container.
 
 ---
@@ -1723,7 +1720,7 @@ Você aprendeu que:
 5. O **Ubuntu** é o sistema operacional da EC2.
 6. O **SSH** permite administrar o servidor remotamente.
 7. O **Security Group** controla o tráfego que chega à EC2.
-8. O parâmetro `-p 8080:80` encaminha a porta 8080 do servidor para a porta 80 do container.
+8. No computador local e na EC2, o parâmetro `-p 80:80` encaminha a porta 80 da máquina para a porta 80 do container.
 
 **Parabéns! Você realizou seu primeiro deploy manual com Docker e AWS EC2.**
 
