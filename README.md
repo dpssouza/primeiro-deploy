@@ -1,4 +1,4 @@
-# Laboratório DevOps – Projeto 1
+# Laboratório Cloud – Projeto 1
 ## Primeiro deploy de um site estático com Docker, Nginx e AWS EC2
 
 **CETEP-I Itaparica · Material didático passo a passo para iniciantes absolutos**
