@@ -1,13 +1,13 @@
-# Laboratório Cloud – Projeto 1
+# Laboratório DevOps – Projeto 1
 ## Primeiro deploy de um site estático com Docker, Nginx e AWS EC2
 
 **CETEP-I Itaparica · Material didático passo a passo para iniciantes absolutos**
 
 Este material foi escrito para quem está tendo o primeiro contato com Docker, Linux e AWS. Leia cada explicação antes de executar o comando. Não pule etapas: cada fase prepara o ambiente para a próxima.
 
-> **Objetivo da prática:** colocar um site estático (HTML, CSS, JavaScript e imagens) dentro de um container Docker e publicá-lo em uma máquina virtual Ubuntu na AWS (EC2), para que outras pessoas possam acessá-lo pela internet.
+> **Objetivo da prática:** preparar um site estático (HTML, CSS, JavaScript e imagens), construir sua imagem Docker, executar e testar o container no próprio computador e, depois, publicá-lo em uma máquina virtual Ubuntu na AWS (EC2), para que outras pessoas possam acessá-lo pela internet.
 
-> **O que será utilizado:** computador com Windows, PowerShell, Docker Desktop (para o teste local), AWS EC2 com Ubuntu, SSH, SCP ou WinSCP, Docker e Nginx.
+> **O que será utilizado:** computador com Windows, Git, conta no GitHub ou acesso a um repositório público, Visual Studio Code (VS Code), terminal integrado do VS Code, Docker Desktop (para construir a imagem localmente), AWS EC2 com Ubuntu, SSH, SCP ou WinSCP, Docker e Nginx.
 >
 > **O que NÃO será utilizado neste primeiro deploy:** Amazon ECR, AWS CLI, Docker Compose, Kubernetes, Certbot ou banco de dados. Essas ferramentas podem ser estudadas em atividades futuras. Aqui vamos aprender o caminho mais simples: construir uma imagem e executá-la com `docker run`.
 
@@ -19,16 +19,19 @@ Imagine que você criou um site no seu computador. Por enquanto, somente você c
 
 Vamos seguir este caminho:
 
-1. Organizar os arquivos do site no computador.
-2. Criar um arquivo chamado `Dockerfile`, que ensinará o Docker a montar o ambiente do site.
-3. Construir uma **imagem Docker**.
-4. Criar um **container** a partir dessa imagem e testar no próprio computador.
-5. Criar uma máquina virtual Ubuntu na AWS, chamada EC2.
-6. Acessar essa máquina remotamente usando SSH.
-7. Instalar o Docker no Ubuntu.
-8. Enviar o projeto do computador para a EC2.
-9. Construir a imagem no servidor e iniciar o container.
-10. Abrir o site pelo IP público da EC2.
+1. Obter os arquivos do projeto no GitHub usando Git.
+2. Abrir o projeto clonado no Visual Studio Code.
+3. Criar um arquivo chamado `Dockerfile`, que ensinará o Docker a montar o ambiente do site.
+4. Construir uma **imagem Docker**.
+5. Conferir se a imagem foi criada corretamente.
+6. Executar o container no próprio computador.
+7. Acessar o site localmente pelo navegador e verificar se está funcionando.
+8. Parar o container local e, somente depois, preparar a máquina virtual Ubuntu na AWS (EC2).
+9. Acessar a EC2 remotamente usando SSH.
+10. Instalar o Docker no Ubuntu.
+11. Enviar o projeto do computador para a EC2.
+12. Construir a imagem no servidor e iniciar o container.
+13. Abrir o site pelo IP público da EC2.
 
 ## 1.1 Palavras que você precisa entender
 
@@ -43,13 +46,18 @@ Vamos seguir este caminho:
 | EC2 | Serviço da AWS que oferece máquinas virtuais, como se alugássemos um computador na nuvem. |
 | Ubuntu | Sistema operacional Linux que será instalado na máquina EC2. |
 | Terminal | Programa no qual digitamos comandos para controlar o computador. |
+| Git | Ferramenta instalada no computador que controla versões e histórico de alterações dos arquivos. |
+| GitHub | Plataforma na internet que hospeda repositórios Git e permite compartilhar e colaborar em projetos. |
+| Repositório | Local onde ficam guardados os arquivos e o histórico de alterações de um projeto. |
+| `git clone` | Comando que copia um repositório remoto para o computador, criando uma cópia local. |
+| `git pull` | Comando que busca e integra atualizações do repositório remoto na cópia local. |
 | SSH | Protocolo que permite acessar com segurança o terminal de outra máquina pela rede. |
 | Docker | Plataforma que permite criar e executar aplicações em containers. |
 | Dockerfile | Arquivo de texto com instruções que ensinam o Docker a construir uma imagem. |
 | Imagem | Pacote que contém o necessário para criar e iniciar um container. É como um molde ou modelo. |
 | Container | Instância criada a partir de uma imagem. É o ambiente que está executando. |
 | Nginx | Servidor web que recebe solicitações HTTP e entrega os arquivos do site ao navegador. |
-| Porta | Número usado para identificar um serviço de rede. Nesta prática, usaremos 8081 no servidor e 80 dentro do container. |
+| Porta | Número usado para identificar um serviço de rede. Nesta prática, usaremos 8080 no servidor e 80 dentro do container. |
 | Security Group | Firewall virtual da AWS que controla quais conexões podem chegar à EC2. |
 
 ## 1.2 Diferença entre Dockerfile, imagem e container
@@ -62,29 +70,51 @@ Pense em uma receita de bolo:
 
 O Dockerfile não é o container e também não é a imagem. Ele é o arquivo usado para construir a imagem.
 
-## 1.3 Como ficará a arquitetura
+## 1.3 Como será o trabalho: primeiro local, depois na nuvem
+
+Nesta atividade, vamos dividir o trabalho em duas partes. Primeiro, vamos construir e testar tudo no computador. Depois que confirmarmos que o site funciona localmente, vamos repetir a construção e a execução na EC2.
+
+**Parte 1 – No computador do aluno:**
+
+```text
+VS CODE + DOCKER DESKTOP
+  Dockerfile e arquivos do site
+          |
+          | docker build
+          v
+    IMAGEM DOCKER
+          |
+          | docker run -p 8080:80
+          v
+  CONTAINER COM NGINX
+          |
+          v
+  http://localhost:8080
+```
+
+**Parte 2 – Na AWS EC2:**
 
 ```text
 COMPUTADOR DO ALUNO
-  HTML, CSS, JavaScript e imagens
-             |
-             | SCP ou WinSCP: envia os arquivos
-             v
+  Dockerfile e pasta website
+          |
+          | SCP ou WinSCP: envia os arquivos
+          v
 AWS EC2 – UBUNTU
   Docker instalado
        |
-       | executa a imagem
+       | docker build e docker run
        v
-CONTAINER
+CONTAINER COM NGINX
   Nginx escutando na porta 80
        |
-       | encaminhamento de portas: 8081 -> 80
+       | encaminhamento de portas: 8080 -> 80
        v
 NAVEGADOR DO VISITANTE
-  http://IP_PUBLICO_DA_EC2:8081
+  http://IP_PUBLICO_DA_EC2:8080
 ```
 
-**Em palavras simples:** o visitante acessa a porta 8081 do endereço público da EC2. O Docker encaminha essa conexão para a porta 80 do container. O Nginx recebe a solicitação e entrega o arquivo `index.html` e os demais arquivos do site.
+**Em palavras simples:** primeiro, o navegador do próprio aluno acessa `localhost:8080` para testar o site no computador. Depois, na EC2, o visitante acessa a porta 8080 do endereço público. Nos dois casos, o Docker encaminha a conexão para a porta 80 do container, onde o Nginx entrega os arquivos do site.
 
 ---
 
@@ -95,18 +125,36 @@ NAVEGADOR DO VISITANTE
 - Windows 10 ou 11.
 - Pasta do projeto do site.
 - Conta AWS autorizada a criar uma instância EC2.
-- Docker Desktop instalado e funcionando no computador, para construir e testar a imagem localmente.
-- PowerShell ou Windows Terminal.
+- Git instalado no Windows (Git for Windows).
+- Visual Studio Code (VS Code) instalado no Windows.
+- Docker Desktop instalado e funcionando no computador, para construir a imagem localmente.
+- Terminal integrado do VS Code (usaremos PowerShell como shell padrão no Windows).
 - Chave privada SSH no formato `.pem`, criada ao configurar a EC2.
-- WinSCP, caso prefira transferir arquivos por uma interface gráfica.
+- WinSCP, opcional, caso prefira transferir arquivos por uma interface gráfica.
 
 **Atenção aos custos:** recursos da AWS podem gerar cobrança. Utilize a conta e o tipo de instância indicados pelo professor. Não crie várias instâncias sem autorização.
 
-## 2.2 Conferir se o Docker está instalado
+## 2.2 Abrir o VS Code e conferir o Docker
 
-Abra o PowerShell no Windows.
+Nesta atividade, vamos utilizar o **Visual Studio Code (VS Code)** para abrir, visualizar e editar os arquivos do projeto. Também vamos executar os comandos no terminal que existe dentro do próprio VS Code.
 
-Execute:
+### Passo 1 – Abrir o VS Code
+
+1. Abra o Visual Studio Code pelo menu Iniciar do Windows.
+2. Aguarde a janela do programa abrir.
+
+### Passo 2 – Abrir o terminal integrado
+
+1. No menu superior, clique em **Terminal**.
+2. Clique em **Novo Terminal**.
+3. Um painel será aberto na parte inferior do VS Code.
+4. No Windows, normalmente o terminal será o PowerShell. Isso é normal: ele estará aberto dentro do VS Code.
+
+> **Atenção:** quando este material disser “terminal integrado do VS Code”, estamos falando desse painel inferior. Os comandos de Windows devem ser digitados nele. Os comandos Linux devem ser digitados somente depois de entrar na EC2 por SSH.
+
+### Passo 3 – Conferir se o Docker está instalado
+
+No terminal integrado do VS Code, execute:
 
 ```powershell
 docker --version
@@ -132,28 +180,187 @@ Se aparecer uma mensagem como `Cannot connect to the Docker daemon`, abra o Dock
 
 ---
 
-# 3. Conhecer e conferir os arquivos do site
 
-A pasta do projeto deve ter esta organização:
+## 2.3 Obter o projeto do GitHub usando Git
+
+Nesta atividade, não vamos baixar ZIP nem extrair arquivos manualmente. Vamos utilizar o **Git**, que baixa o projeto diretamente do GitHub e facilita obter atualizações depois.
+
+### Primeiro: entender Git e GitHub
+
+- **Git:** programa instalado no computador. Ele controla as versões dos arquivos e permite baixar atualizações.
+- **GitHub:** site na internet onde o repositório do projeto está hospedado.
+- **Repositório:** é o projeto armazenado no GitHub, com seus arquivos e histórico de alterações.
+- **`git clone`:** comando que copia o repositório do GitHub para o computador, criando uma pasta com os arquivos do projeto.
+
+Pense assim: o Git é a ferramenta que faz o serviço; o GitHub é o local na internet onde o projeto está guardado.
+
+### Passo 1 – Instalar o Git no Windows
+
+1. Abra o navegador e acesse https://git-scm.com/downloads.
+2. Baixe a versão do Git para Windows.
+3. Execute o instalador.
+4. Se não souber o que escolher, mantenha as opções padrão e avance até concluir a instalação.
+5. Feche e abra novamente o VS Code para que ele reconheça o Git.
+
+> Se o Git já estiver instalado no computador, pule a instalação e faça a conferência abaixo.
+
+### Passo 2 – Conferir se o Git está instalado
+
+No VS Code, abra **Terminal > Novo Terminal** e execute:
+
+```powershell
+git --version
+```
+
+O que significa:
+
+- `git`: chama o programa Git.
+- `--version`: solicita que ele mostre a versão instalada.
+
+Se aparecer algo como `git version 2.x.x`, está instalado corretamente.
+
+Se aparecer que `git` não é reconhecido, feche o VS Code, abra novamente e teste. Se continuar, o Git pode não ter sido instalado corretamente.
+
+### Passo 3 – Copiar o endereço do repositório
+
+O repositório utilizado nesta atividade é:
+
+1. Abra o endereço do repositório no navegador: https://github.com/dpssouza/primeiro-deploy
+2. Selecione o endereço HTTPS abaixo (ou clique em **Code** e copie o endereço):
 
 ```text
-projeto-laboratorio/
-├── Dockerfile
-└── website/
-    ├── index.html
-    ├── assets/
-    │   └── logo-cetep-i.jpg
-    ├── css/
-    │   └── style.css
-    └── js/
-        └── script.js
+https://github.com/dpssouza/primeiro-deploy.git
+```
+
+Este é o endereço correto do projeto utilizado neste laboratório.
+
+### Passo 4 – Escolher onde guardar o projeto
+
+Para facilitar, vamos guardar o projeto diretamente na pasta pessoal do usuário do Windows. Assim, não precisamos adivinhar se a pasta se chama `Documents`, `Documentos` ou se está dentro do OneDrive.
+
+No terminal integrado do VS Code, execute:
+
+```powershell
+cd $HOME
+```
+
+Explicação:
+
+- `cd`: muda a pasta atual do terminal.
+- `$HOME`: representa a pasta pessoal do usuário do Windows.
+
+O projeto será baixado dentro dessa pasta. Se preferir outro local, o professor poderá orientar como escolher uma pasta diferente.
+
+### Passo 5 – Clonar o repositório
+
+No terminal integrado do VS Code, execute o comando abaixo:
+
+```powershell
+git clone https://github.com/dpssouza/primeiro-deploy.git
+```
+
+O comando já utiliza o endereço correto do repositório. Não é necessário substituir nenhuma parte.
+
+Entenda o comando:
+
+- `git`: chama o Git.
+- `clone`: significa clonar; faz uma cópia do repositório para o computador.
+- `https://...git`: endereço do repositório que será copiado.
+
+Aguarde o comando terminar. O Git criará uma pasta com o nome do repositório e colocará os arquivos dentro dela.
+
+### Passo 6 – Entrar na pasta que foi baixada
+
+O Git cria uma pasta chamada `primeiro-deploy`. Entre nela com:
+
+```powershell
+cd primeiro-deploy
+```
+
+O comando `cd` muda o terminal para dentro da pasta do projeto.
+
+Para conferir onde você está:
+
+```powershell
+pwd
+```
+
+Para listar os arquivos:
+
+```powershell
+dir
+```
+
+Você deve localizar a pasta `website`. Se ela não aparecer, entre na pasta correta do projeto ou confira com o professor se o repositório indicado é o certo.
+
+### Passo 7 – Abrir o projeto no VS Code
+
+Se o terminal ainda não estiver aberto na pasta do projeto, entre nela. Depois execute:
+
+```powershell
+code .
+```
+
+Explicação:
+
+- `code`: chama o Visual Studio Code pelo terminal.
+- `.`: significa a pasta atual.
+
+O VS Code abrirá o projeto atual. Se o comando `code` não for reconhecido, use o menu **Arquivo > Abrir Pasta...** e selecione a pasta que foi criada pelo `git clone`.
+
+### Como obter atualizações depois?
+
+Quando o professor atualizar o repositório, você poderá entrar na pasta do projeto e executar:
+
+```powershell
+git pull
+```
+
+- `git`: chama o Git.
+- `pull`: busca as atualizações do repositório remoto e integra essas alterações à cópia que está no seu computador.
+
+**Importante:** execute `git pull` dentro da pasta do projeto. Se você já alterou arquivos localmente, o Git pode avisar que há alterações que precisam ser resolvidas antes de atualizar. Não apague seus arquivos para tentar resolver sem orientação.
+
+### Resumo dos comandos Git usados nesta etapa
+
+| Comando | O que faz? |
+|---|---|
+| `git --version` | Confere se o Git está instalado e mostra a versão. |
+| `git clone ENDERECO` | Baixa uma cópia do repositório para o computador. |
+| `cd NOME-DA-PASTA` | Entra na pasta do projeto. |
+| `pwd` | Mostra em qual pasta o terminal está. |
+| `dir` | Lista arquivos e pastas no Windows. |
+| `code .` | Abre a pasta atual no VS Code. |
+| `git pull` | Busca e integra atualizações do repositório. |
+
+> **Para este laboratório:** o repositório precisa estar acessível ao aluno. Se for privado, o professor deverá orientar como obter autorização de acesso ao GitHub antes de executar `git clone`.
+
+---
+
+# 3. Conhecer e conferir os arquivos do site
+
+Neste momento, o repositório contém os arquivos do site. **O Dockerfile ainda não existe: ele será criado por você na seção 4. Essa é uma das tarefas principais deste laboratório.**
+
+A estrutura esperada antes de criar o Dockerfile é:
+
+```text
+primeiro-deploy/
+├── website/
+│   ├── index.html
+│   ├── assets/
+│   │   └── logo-cetep-i.jpg
+│   ├── css/
+│   │   └── style.css
+│   └── js/
+│       └── script.js
+└── README.md
 ```
 
 Observe:
 
-- `projeto-laboratorio/` é a pasta principal do projeto.
-- `Dockerfile` fica diretamente dentro da pasta principal.
+- `primeiro-deploy/` é a pasta principal criada pelo comando `git clone`.
 - `website/` guarda os arquivos que formam o site.
+- `Dockerfile` ainda não aparece porque será criado pelo aluno na seção 4.
 - `index.html` é a página inicial.
 - `assets/` guarda imagens e outros recursos.
 - `css/` guarda o arquivo de estilos.
@@ -161,23 +368,13 @@ Observe:
 
 O nome dos arquivos e das pastas precisa corresponder ao que está escrito no HTML. Em Linux, letras maiúsculas e minúsculas são diferentes: `Logo.jpg` não é o mesmo arquivo que `logo.jpg`.
 
-## 3.1 Abrir a pasta do projeto no PowerShell
+## 3.1 Conferir a pasta do projeto pelo VS Code
 
-Exemplo:
+Se você seguiu a seção 2.3, a pasta do projeto já está aberta no VS Code. No painel **Explorer/Explorador**, à esquerda, confira se aparece a pasta `website`.
 
-```powershell
-cd "C:\Users\Aluno\Downloads\projeto-laboratorio"
-```
+Agora abra **Terminal > Novo Terminal**. O terminal integrado deverá iniciar na pasta do projeto.
 
-**Explicação:**
-
-- `cd` vem de *change directory*, que significa “mudar de diretório” ou “entrar em uma pasta”.
-- O caminho entre aspas indica qual pasta queremos abrir.
-- As aspas são importantes quando o caminho tem espaços.
-
-O caminho acima é apenas um exemplo. Troque pelo caminho real do seu computador.
-
-Para conferir em qual pasta você está, execute:
+Para conferir o caminho atual, execute:
 
 ```powershell
 pwd
@@ -185,15 +382,15 @@ pwd
 
 `pwd` significa *print working directory*. Ele mostra o caminho da pasta atual.
 
-Para listar os arquivos e pastas:
+Para listar os arquivos e pastas, execute:
 
 ```powershell
 dir
 ```
 
-No PowerShell, `dir` mostra o conteúdo da pasta atual.
+O comando `dir` mostra o conteúdo da pasta atual. Nesta etapa, você deve encontrar `website`. O `Dockerfile` ainda não existe: vamos criá-lo na seção 4.
 
-Você deve encontrar `Dockerfile` e `website` depois de criar o Dockerfile na próxima fase.
+**Se o terminal abrir em outra pasta:** no VS Code, use **Arquivo > Abrir Pasta...** e selecione novamente a pasta principal do projeto. Não é necessário digitar manualmente o caminho com `cd`.
 
 ---
 
@@ -210,23 +407,23 @@ Ele responde a perguntas como:
 - Qual porta o serviço utiliza?
 - Qual programa deve iniciar quando o container for executado?
 
-O nome do arquivo deve ser exatamente `Dockerfile`, com D maiúsculo e **sem extensão**. Não deve ser `Dockerfile.txt`.
+O nome do arquivo deve ser exatamente `Dockerfile`, com D maiúsculo e **sem extensão**.
 
-## 4.2 Criar o arquivo no Windows
+## 4.2 Criar o Dockerfile diretamente no VS Code
 
-Na pasta principal do projeto, execute:
+O arquivo precisa se chamar exatamente `Dockerfile`, com D maiúsculo e **sem extensão**. Ele deve ficar na pasta principal do projeto, no mesmo nível da pasta `website`.
 
-```powershell
-notepad Dockerfile
-```
+### Passo 1 – Criar o arquivo
 
-Explicação:
+1. No painel **Explorer/Explorador**, à esquerda, localize a pasta principal do projeto.
+2. Passe o mouse sobre o nome dessa pasta.
+3. Clique no ícone **New File/Novo Arquivo** (folha com sinal de `+`).
+4. Digite exatamente `Dockerfile` e pressione `Enter`.
+5. O novo arquivo aparecerá no painel Explorer e será aberto no editor.
 
-- `notepad`: abre o Bloco de Notas do Windows.
-- `Dockerfile`: nome do arquivo que queremos abrir.
-- Se o arquivo ainda não existir, o Bloco de Notas perguntará se você deseja criá-lo.
+### Passo 2 – Inserir o conteúdo
 
-Cole o conteúdo abaixo:
+Com o arquivo `Dockerfile` aberto, cole exatamente este conteúdo:
 
 ```dockerfile
 # Imagem base: Nginx com Alpine Linux
@@ -242,7 +439,19 @@ EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
 ```
 
-Salve o arquivo e feche o Bloco de Notas.
+Pressione `Ctrl + S` para salvar.
+
+### Passo 3 – Conferir a estrutura
+
+No painel Explorer, o `Dockerfile` e a pasta `website` devem aparecer lado a lado, dentro da pasta principal do projeto. Para conferir pelo terminal integrado do VS Code, execute:
+
+```powershell
+dir
+```
+
+A listagem deve mostrar `Dockerfile` e `website`. Se algum deles não aparecer, confira se você abriu a pasta principal correta no VS Code.
+
+**Só avance para o `docker build` quando o arquivo se chamar exatamente `Dockerfile` e estiver ao lado da pasta `website`.**
 
 ## 4.3 Explicação de CADA instrução do Dockerfile
 
@@ -397,17 +606,27 @@ O Docker executa o programa diretamente, sem precisar iniciar um shell para inte
 Execute:
 
 ```powershell
-dir
+Get-ChildItem -Force | Select-Object Name
 ```
 
-O resultado deve mostrar:
+Procure exatamente estes nomes:
 
 ```text
 Dockerfile
 website
 ```
 
-Se aparecer `Dockerfile.txt`, o arquivo foi salvo com extensão errada. Renomeie para `Dockerfile`.
+O nome precisa ser exatamente `Dockerfile`, sem extensão.
+
+Agora execute:
+
+```powershell
+Test-Path .\Dockerfile
+```
+
+O resultado esperado é `True`. Se aparecer `False`, confira se você está na pasta correta e se o arquivo foi criado com o nome exato `Dockerfile`.
+
+**Só avance para o `docker build` quando o nome estiver correto e `Dockerfile` e `website` estiverem no mesmo nível da pasta.**
 
 ---
 
@@ -444,15 +663,19 @@ O Docker lê o Dockerfile de cima para baixo e executa suas instruções para mo
 
 Ao terminar, o Docker informa que a imagem foi construída.
 
-## 5.3 Conferir se a imagem existe
+# 6. Executar e testar o container no computador
 
-Execute:
+Antes de criar a máquina virtual na AWS, vamos executar a imagem no próprio computador. Assim, podemos verificar se o Nginx inicia e se o site abre corretamente no navegador.
+
+## 6.1 Conferir se a imagem foi criada
+
+A construção terminou sem apresentar erros? Então o Docker conseguiu criar a imagem. Para conferir se ela está disponível, execute no terminal integrado do VS Code:
 
 ```powershell
 docker images
 ```
 
-- `docker`: programa Docker.
+- `docker`: chama o programa Docker.
 - `images`: lista as imagens disponíveis no computador.
 
 Procure uma linha semelhante a:
@@ -462,115 +685,83 @@ REPOSITORY           TAG
 laboratorio-cetepi   v1
 ```
 
-Se aparecer, a imagem foi criada.
+Se aparecer `laboratorio-cetepi` com a tag `v1`, podemos iniciar um container usando essa imagem.
 
----
+## 6.2 Executar o container localmente
 
-# 6. Testar a imagem no computador
-
-Antes de enviar o projeto para a nuvem, vamos testar se o site funciona no próprio computador.
-
-## 6.1 Criar e iniciar o container
-
-Execute:
+No terminal integrado do VS Code, ainda na pasta do projeto, execute:
 
 ```powershell
-docker run -d --name laboratorio-cetepi-teste -p 8080:80 laboratorio-cetepi:v1
+docker run -d --name laboratorio-cetepi-local -p 8080:80 laboratorio-cetepi:v1
 ```
 
-Entenda cada parte:
+Vamos entender cada parte:
 
-- `docker`: chama o Docker.
-- `run`: cria e inicia um novo container a partir de uma imagem.
-- `-d`: significa *detached*. Executa o container em segundo plano, liberando o terminal para outros comandos.
-- `--name`: opção que permite escolher um nome para o container.
-- `laboratorio-cetepi-teste`: nome que escolhemos para esse container de teste.
-- `-p`: significa publicar ou mapear uma porta.
-- `8080:80`: mapeamento de portas. O número antes dos dois-pontos é a porta do computador; o número depois é a porta dentro do container.
-- `laboratorio-cetepi:v1`: nome e tag da imagem que será utilizada.
+- `docker`: chama o programa Docker.
+- `run`: cria e inicia um container a partir de uma imagem.
+- `-d`: executa o container em segundo plano, sem prender o terminal.
+- `--name laboratorio-cetepi-local`: define o nome do container. Usamos o sufixo `-local` para deixar claro que este container está no computador do aluno.
+- `-p 8080:80`: encaminha a porta 8080 do computador para a porta 80 do container.
+- `laboratorio-cetepi:v1`: nome e tag da imagem que será utilizada para criar o container.
 
-**Entenda `8080:80`:**
+**Entenda o mapeamento `8080:80`:** o primeiro número (`8080`) é a porta do computador. O segundo número (`80`) é a porta dentro do container, onde o Nginx está escutando.
 
-- `8080`: porta do computador (máquina host).
-- `:`: separa a porta externa da porta interna.
-- `80`: porta do container, onde o Nginx está escutando.
+Se o comando retornar um código longo, formado por letras e números, isso indica que o Docker criou o container.
 
-Portanto, quando acessarmos `http://localhost:8080`, o Docker encaminhará a conexão para a porta 80 do container.
+## 6.3 Conferir se o container está em execução
 
-## 6.2 Verificar se o container está em execução
+Execute:
 
 ```powershell
 docker ps
 ```
 
-- `ps` é uma abreviação tradicional de *process status*.
-- No Docker, `docker ps` lista os containers em execução.
+- `docker`: chama o programa Docker.
+- `ps`: lista os containers que estão em execução.
 
-Procure `laboratorio-cetepi-teste` e confira se o status começa com `Up`.
+Procure o container `laboratorio-cetepi-local`. Na coluna `PORTS`, deve aparecer algo semelhante a `0.0.0.0:8080->80/tcp`. Isso indica que a porta 8080 do computador foi encaminhada para a porta 80 do container.
 
-Para listar também os containers parados:
+Se o container não aparecer, execute `docker ps -a` para listar também os containers parados.
 
-```powershell
-docker ps -a
-```
+## 6.4 Abrir o site no navegador
 
-A opção `-a` significa *all* (todos).
-
-## 6.3 Abrir o site
-
-No navegador, acesse:
+Abra o navegador no próprio computador e digite o endereço:
 
 ```text
 http://localhost:8080
 ```
 
-- `http://` indica o protocolo HTTP.
-- `localhost` significa o próprio computador.
-- `:8080` indica a porta publicada no computador.
+`localhost` significa o próprio computador. Como publicamos a porta 8080 do computador, o navegador consegue acessar o Nginx que está dentro do container.
 
-Se o site aparecer, o teste local funcionou.
+**Resultado esperado:** a página inicial do projeto deve aparecer no navegador. Confira se o texto, as imagens, o CSS e os demais elementos do site estão sendo exibidos corretamente.
 
-## 6.4 Consultar os logs
+> Se a página não abrir, confira se o Docker Desktop está em execução, se o container aparece em `docker ps` e se o endereço foi digitado exatamente como `http://localhost:8080`. A seção de solução de problemas também poderá ajudar.
+
+## 6.5 Consultar os logs, se necessário
+
+Se o site não abrir ou se quiser verificar as mensagens do Nginx, execute:
 
 ```powershell
-docker logs laboratorio-cetepi-teste
+docker logs laboratorio-cetepi-local
 ```
 
 - `logs`: mostra as mensagens registradas pelo container.
-- `laboratorio-cetepi-teste`: identifica de qual container queremos ver os logs.
+- `laboratorio-cetepi-local`: é o nome do container que queremos consultar.
 
-Para acompanhar as mensagens continuamente:
+## 6.6 Parar o container local
 
-```powershell
-docker logs -f laboratorio-cetepi-teste
-```
-
-- `-f` significa *follow* (acompanhar).
-- Para parar de acompanhar os logs, pressione `Ctrl + C`. Isso encerra a visualização, não significa que o container será parado.
-
-## 6.5 Parar e remover o container de teste
-
-Primeiro:
+Depois de confirmar que o site abriu corretamente, pare o container local:
 
 ```powershell
-docker stop laboratorio-cetepi-teste
+docker stop laboratorio-cetepi-local
 ```
 
-- `stop`: solicita que o container seja parado.
-- `laboratorio-cetepi-teste`: nome do container.
+- `stop`: solicita que o container seja encerrado.
+- `laboratorio-cetepi-local`: identifica qual container será parado.
 
-Depois:
+A imagem `laboratorio-cetepi:v1` continuará salva no computador. Na próxima etapa, vamos preparar a EC2 e enviar os arquivos do projeto para construir e executar a aplicação no servidor.
 
-```powershell
-docker rm laboratorio-cetepi-teste
-```
-
-- `rm`: abreviação de *remove* (remover).
-- Remove o container que já foi parado.
-
-**Atenção:** remover um container não é o mesmo que remover uma imagem. A imagem `laboratorio-cetepi:v1` continua disponível.
-
----
+**Importante:** só começaremos a configuração da AWS depois de concluir a construção da imagem e o teste local do site.
 
 # 7. Criar a máquina virtual na AWS (EC2)
 
@@ -607,7 +798,7 @@ Crie as regras de entrada:
 | Tipo | Protocolo | Porta | Origem | Para que serve |
 |---|---|---:|---|---|
 | SSH | TCP | 22 | Meu IP | Permite administrar a EC2 pelo terminal |
-| Custom TCP | TCP | 8081 | 0.0.0.0/0 | Permite que visitantes acessem o site |
+| Custom TCP | TCP | 8080 | 0.0.0.0/0 | Permite que visitantes acessem o site |
 
 Explicando os campos:
 
@@ -618,7 +809,7 @@ Explicando os campos:
 - **Meu IP:** limita o SSH ao endereço de internet que você está utilizando no momento.
 - **0.0.0.0/0:** significa qualquer endereço IPv4. É usado aqui para permitir que visitantes acessem o site.
 
-**Atenção:** não deixe SSH aberto para toda a internet sem necessidade. A porta 8081 ficará pública para permitir a visita ao site.
+**Atenção:** não deixe SSH aberto para toda a internet sem necessidade. A porta 8080 ficará pública para permitir a visita ao site.
 
 ## 7.4 Lançar a instância
 
@@ -645,68 +836,122 @@ O endereço real será diferente. Não copie o endereço do exemplo: use o IP da
 
 ## 8.1 O que é SSH?
 
-SSH significa *Secure Shell*. É uma forma segura de acessar o terminal de outro computador pela rede.
+SSH significa *Secure Shell*. É uma forma segura de acessar o terminal de outro computador pela rede. Neste laboratório, vamos acessar remotamente a máquina EC2, que utiliza Ubuntu.
 
-Neste laboratório, o computador local é o Windows e o computador remoto é a EC2 com Ubuntu.
+**Onde executar os comandos:** no Windows, abra o VS Code e escolha **Terminal > Novo Terminal**. O terminal integrado deve estar configurado para **PowerShell**. Os comandos de conexão e os comandos `icacls` desta seção são executados nesse terminal local do Windows. Depois que a conexão for estabelecida, o prompt mudará e você estará no terminal remoto do Ubuntu.
 
-## 8.2 Localizar a chave `.pem`
+## 8.2 Localizar a chave privada `.pem`
 
-Encontre o arquivo que foi baixado quando o par de chaves foi criado.
-
-Exemplo:
+Encontre o arquivo `.pem` que foi baixado quando o par de chaves foi criado na AWS. Por exemplo, ele pode estar em:
 
 ```text
-C:\Users\Aluno\Downloads\laboratorio-cetepi.pem
+C:\loja.pem
 ```
 
-Não compartilhe esse arquivo. Ele é uma credencial privada.
+A chave privada é uma credencial de acesso ao servidor. **Não envie o arquivo `.pem` para o GitHub, não compartilhe com outras pessoas e não publique seu conteúdo.**
 
-## 8.3 Conectar pelo PowerShell
+## 8.3 Tentar a conexão SSH
 
-No PowerShell do Windows, execute:
+No terminal integrado do VS Code (PowerShell), execute o comando abaixo, substituindo o IP pelo IPv4 público da sua instância EC2:
 
 ```powershell
-ssh -i "C:\caminho\da\chave.pem" ubuntu@IP_PUBLICO_DA_EC2
+ssh -i "C:\loja.pem" ubuntu@IP_PUBLICO_DA_EC2
 ```
 
-Explicação:
+Entenda cada parte:
 
-- `ssh`: inicia uma conexão SSH.
-- `-i`: informa qual arquivo de identidade (chave privada) será utilizado.
-- `"C:\caminho\da\chave.pem"`: caminho completo da chave privada.
-- `ubuntu`: nome do usuário Linux da imagem Ubuntu da AWS.
-- `@`: separa o usuário do endereço do servidor.
-- `IP_PUBLICO_DA_EC2`: endereço público da sua instância.
+- `ssh`: inicia uma conexão segura com outro computador.
+- `-i`: informa qual arquivo de identidade (chave privada) será usado para autenticar o acesso.
+- `"C:\loja.pem"`: caminho completo onde está armazenada a chave privada. Se o arquivo estiver em outra pasta, ajuste o caminho.
+- `ubuntu`: usuário padrão utilizado para acessar uma instância EC2 com Ubuntu.
+- `@`: separa o nome do usuário do endereço do servidor.
+- `IP_PUBLICO_DA_EC2`: endereço IPv4 público da sua instância. Substitua pelo endereço real exibido no console da AWS.
 
-Exemplo fictício:
+Exemplo fictício de IP:
 
 ```powershell
-ssh -i "C:\Users\Aluno\Downloads\laboratorio-cetepi.pem" ubuntu@54.123.45.67
+ssh -i "C:\loja.pem" ubuntu@54.123.45.67
 ```
 
-Na primeira conexão, o SSH pode perguntar se você confia na identidade do servidor. Confira o IP e digite `yes` para continuar.
+### Se aparecer erro de permissões da chave no Windows
 
-**Por que usamos `ubuntu` e não `ec2-user`?** Porque a imagem escolhida é Ubuntu. O usuário padrão das imagens Ubuntu da AWS é `ubuntu`. O usuário `ec2-user` é utilizado em distribuições como Amazon Linux.
+Em alguns computadores, o SSH não aceita a chave porque as permissões do arquivo permitem acesso a outros usuários. As mensagens podem incluir:
 
-## 8.4 Como saber que entrou no servidor?
+- `UNPROTECTED PRIVATE KEY FILE`;
+- `Bad permissions`;
+- `Permissions for ... are too open`.
 
-O terminal mostrará algo parecido com:
+Para corrigir, continue no **terminal integrado do VS Code configurado para PowerShell**. Execute os comandos abaixo, um de cada vez, usando o caminho correto da sua chave. Neste exemplo, a chave está em `C:\loja.pem`.
+
+**Comando 1:**
+
+```powershell
+icacls "C:\loja.pem" /reset
+```
+
+- `icacls`: ferramenta do Windows para consultar e alterar as permissões de arquivos e pastas.
+- `/reset`: redefine as permissões do arquivo para as permissões herdadas do local onde ele está salvo.
+
+**Comando 2:**
+
+```powershell
+icacls "C:\loja.pem" /grant:r "$($env:USERNAME):(R)"
+```
+
+- `/grant:r`: concede a permissão indicada e substitui permissões explícitas anteriores para esse usuário.
+- `$($env:USERNAME)`: representa o nome do usuário que está conectado ao Windows.
+- `(R)`: concede permissão de leitura (*Read*), necessária para o SSH ler a chave.
+
+**Comando 3:**
+
+```powershell
+icacls "C:\loja.pem" /inheritance:r
+```
+
+- `/inheritance:r`: desativa a herança de permissões e remove as permissões herdadas. Isso evita que outros usuários recebam acesso à chave por herança.
+
+Depois de executar os três comandos, tente novamente a conexão:
+
+```powershell
+ssh -i "C:\loja.pem" ubuntu@IP_PUBLICO_DA_EC2
+```
+
+Lembre-se de substituir `IP_PUBLICO_DA_EC2` pelo IPv4 público real da instância.
+
+**Atenção:** aplique esses comandos somente ao arquivo da chave privada correta. Não altere permissões de outros arquivos por tentativa. Se o erro continuar, confira se o caminho da chave está correto, se a chave corresponde ao par escolhido na criação da EC2 e se o usuário SSH é `ubuntu`.
+
+### Se estiver usando Linux ou macOS
+
+Em Linux ou macOS, a correção usual é restringir a leitura da chave ao proprietário:
+
+```bash
+chmod 400 caminho/para/sua-chave.pem
+ssh -i "caminho/para/sua-chave.pem" ubuntu@IP_PUBLICO_DA_EC2
+```
+
+- `chmod`: altera as permissões de um arquivo.
+- `400`: permite que somente o proprietário leia o arquivo; os demais usuários não recebem permissões.
+- `ssh -i`: inicia a conexão utilizando a chave indicada.
+
+## 8.4 Confirmar a primeira conexão
+
+Na primeira conexão, o SSH pode exibir uma mensagem perguntando se você confia na identidade do servidor. Confira se o IP exibido corresponde à sua instância EC2. Se estiver correto, digite `yes` e pressione `Enter`.
+
+Quando a conexão funcionar, o prompt será parecido com:
 
 ```text
 ubuntu@ip-172-31-xx-xx:~$
 ```
 
-Isso significa que você está no terminal do Ubuntu na EC2. Os comandos seguintes desta fase serão executados no servidor remoto, não no Windows.
+Isso indica que você está no terminal do Ubuntu da EC2. A partir desse momento, os comandos Linux das próximas seções devem ser executados nessa sessão remota, e não no PowerShell local do Windows.
 
-Para sair do servidor:
+Para encerrar a conexão e voltar ao terminal local do VS Code, execute:
 
 ```bash
 exit
 ```
 
-- `exit`: encerra a sessão do terminal remoto e retorna ao terminal local.
-
----
+- `exit`: encerra a sessão SSH e retorna ao terminal local.
 
 # 9. Instalar Docker no Ubuntu
 
@@ -817,12 +1062,12 @@ docker ps
 
 # 10. Enviar os arquivos do Windows para a EC2
 
-O site está no computador, mas o servidor EC2 ainda precisa receber os arquivos. Vamos transferir o `Dockerfile` e a pasta `website`.
+O site e o `Dockerfile` estão no computador, mas o servidor EC2 ainda precisa receber esses arquivos. Nesta primeira prática, vamos transferi-los com SCP. O Git foi utilizado para obter o projeto do GitHub; o SCP será utilizado para copiar a versão que você preparou (incluindo o Dockerfile criado na aula) para a EC2.
 
 Você pode escolher uma das opções:
 
-- **Opção A:** PowerShell com SCP.
-- **Opção B:** WinSCP, com interface gráfica.
+- **Opção A (recomendada):** usar o comando SCP no terminal integrado do VS Code.
+- **Opção B:** usar WinSCP, com interface gráfica.
 
 Não precisa utilizar as duas.
 
@@ -830,19 +1075,22 @@ Não precisa utilizar as duas.
 
 SCP significa *Secure Copy*. É um comando que copia arquivos entre computadores utilizando SSH.
 
-### Passo A – Abrir a pasta do projeto no PowerShell
+### Passo A – Abrir o terminal na pasta do projeto
 
-No Windows, entre na pasta principal do projeto:
+No VS Code, confirme que a pasta principal do projeto está aberta. Clique em **Terminal > Novo Terminal**.
+
+O terminal integrado deverá abrir na pasta do projeto. Execute:
 
 ```powershell
-cd "C:\caminho\para\projeto-laboratorio"
+pwd
+dir
 ```
 
-A pasta atual deve conter `Dockerfile` e `website`.
+A listagem deve conter `Dockerfile` e `website`. Se não contiver, abra a pasta correta pelo menu **Arquivo > Abrir Pasta...**.
 
 ### Passo B – Criar uma pasta no servidor
 
-Execute no PowerShell do Windows:
+Execute no terminal integrado do VS Code (Windows):
 
 ```powershell
 ssh -i "C:\caminho\da\chave.pem" ubuntu@IP_PUBLICO_DA_EC2 "mkdir -p ~/laboratorio-cetepi"
@@ -861,7 +1109,7 @@ Explicação:
 
 ### Passo C – Copiar o Dockerfile e a pasta website
 
-Ainda no PowerShell do Windows, execute:
+Ainda no terminal integrado do VS Code (Windows), execute:
 
 ```powershell
 scp -i "C:\caminho\da\chave.pem" -r Dockerfile website ubuntu@IP_PUBLICO_DA_EC2:~/laboratorio-cetepi/
@@ -879,7 +1127,7 @@ Explicação de cada parte:
 - `:`: separa o endereço remoto do caminho de destino.
 - `~/laboratorio-cetepi/`: pasta de destino no servidor.
 
-**Atenção:** os comandos são executados no PowerShell do Windows. Não digite esses caminhos do Windows dentro do terminal Ubuntu.
+**Atenção:** esses comandos são executados no terminal integrado do VS Code no Windows. Não digite os caminhos do Windows dentro do terminal Ubuntu da EC2.
 
 ## 10.2 Opção B – Transferir usando WinSCP
 
@@ -984,7 +1232,7 @@ Procure a imagem `laboratorio-cetepi` com a tag `v1`.
 Execute:
 
 ```bash
-sudo docker run -d --name laboratorio-cetepi --restart unless-stopped -p 8081:80 laboratorio-cetepi:v1
+sudo docker run -d --name laboratorio-cetepi --restart unless-stopped -p 8080:80 laboratorio-cetepi:v1
 ```
 
 Agora vamos entender cada parte, sem pular nenhuma:
@@ -998,28 +1246,28 @@ Agora vamos entender cada parte, sem pular nenhuma:
 - `--restart`: define a política de reinicialização do container.
 - `unless-stopped`: política que permite reiniciar o container automaticamente quando o Docker ou o servidor reiniciar, exceto se ele tiver sido parado manualmente.
 - `-p`: publica/mapeia uma porta do servidor para uma porta do container.
-- `8081:80`: porta 8081 da EC2 encaminhada para a porta 80 do container.
+- `8080:80`: porta 8080 da EC2 encaminhada para a porta 80 do container.
 - `laboratorio-cetepi:v1`: imagem e tag que serão utilizadas para criar o container.
 
-### 12.2 Entender o mapeamento de portas 8081:80
+### 12.2 Entender o mapeamento de portas 8080:80
 
 ```text
--p 8081:80
+-p 8080:80
    |    |
    |    +---- Porta 80 dentro do container (Nginx)
    |
-   +--------- Porta 8081 da EC2 (servidor)
+   +--------- Porta 8080 da EC2 (servidor)
 ```
 
 Quando o visitante digita:
 
 ```text
-http://IP_PUBLICO_DA_EC2:8081
+http://IP_PUBLICO_DA_EC2:8080
 ```
 
-a conexão chega à porta 8081 da EC2. O Docker encaminha a conexão para a porta 80 do container. O Nginx recebe a solicitação e entrega o site.
+a conexão chega à porta 8080 da EC2. O Docker encaminha a conexão para a porta 80 do container. O Nginx recebe a solicitação e entrega o site.
 
-**Atenção:** para isso funcionar, a porta TCP 8081 também precisa estar liberada no Security Group da EC2.
+**Atenção:** para isso funcionar, a porta TCP 8080 também precisa estar liberada no Security Group da EC2.
 
 ## 12.3 Conferir o container
 
@@ -1033,9 +1281,9 @@ Procure:
 
 - nome: `laboratorio-cetepi`;
 - status: `Up`;
-- portas: algo semelhante a `0.0.0.0:8081->80/tcp`.
+- portas: algo semelhante a `0.0.0.0:8080->80/tcp`.
 
-O trecho `0.0.0.0:8081->80/tcp` indica que a porta 8081 está publicada nas interfaces IPv4 do servidor e encaminhada à porta 80 do container.
+O trecho `0.0.0.0:8080->80/tcp` indica que a porta 8080 está publicada nas interfaces IPv4 do servidor e encaminhada à porta 80 do container.
 
 Para listar também containers parados:
 
@@ -1070,13 +1318,13 @@ sudo docker logs -f laboratorio-cetepi
 No navegador do computador, digite:
 
 ```text
-http://IP_PUBLICO_DA_EC2:8081
+http://IP_PUBLICO_DA_EC2:8080
 ```
 
 Exemplo fictício:
 
 ```text
-http://54.123.45.67:8081
+http://54.123.45.67:8080
 ```
 
 Substitua pelo IP público da sua EC2.
@@ -1099,7 +1347,7 @@ Se a página do CETEP-I aparecer, o deploy foi realizado.
 Na EC2, execute:
 
 ```bash
-curl -I http://localhost:8081
+curl -I http://localhost:8080
 ```
 
 Explicação:
@@ -1108,7 +1356,7 @@ Explicação:
 - `-I`: solicita apenas os cabeçalhos da resposta HTTP.
 - `http://`: protocolo utilizado.
 - `localhost`: a própria máquina EC2.
-- `:8081`: porta publicada no servidor.
+- `:8080`: porta publicada no servidor.
 
 Se o serviço responder com um código HTTP como `200 OK`, é um sinal de que o Nginx está entregando a resposta. Outros códigos podem indicar redirecionamento ou algum problema que precisa ser investigado.
 
@@ -1131,7 +1379,7 @@ sudo systemctl status docker --no-pager
 Consulta se o serviço Docker está ativo.
 
 ```bash
-curl -I http://localhost:8081
+curl -I http://localhost:8080
 ```
 
 Testa a resposta HTTP do site pela própria EC2.
@@ -1196,7 +1444,7 @@ sudo docker rm laboratorio-cetepi
 ## 14.5 Criar o container com a nova imagem
 
 ```bash
-sudo docker run -d --name laboratorio-cetepi --restart unless-stopped -p 8081:80 laboratorio-cetepi:v2
+sudo docker run -d --name laboratorio-cetepi --restart unless-stopped -p 8080:80 laboratorio-cetepi:v2
 ```
 
 Agora o container será criado usando a imagem `v2`.
@@ -1212,6 +1460,22 @@ Atualize o navegador com `Ctrl + F5` para solicitar os arquivos novamente, evita
 ---
 
 # 15. Solução de problemas
+
+## Problema 0 – `failed to read dockerfile` ou `open Dockerfile: no such file or directory`
+
+Esse erro significa que o Docker não encontrou um arquivo chamado exatamente `Dockerfile` na pasta em que o comando `docker build` foi executado.
+
+No VS Code, confira o painel Explorer e verifique se existe um arquivo chamado exatamente `Dockerfile` na pasta principal do projeto. Se ele não existir, crie-o seguindo a seção 4.2.
+
+Depois, no terminal integrado do VS Code, execute:
+
+```powershell
+dir
+```
+
+A listagem deve mostrar `Dockerfile` e `website`. Se o arquivo estiver correto e o erro continuar, execute `pwd` para conferir o caminho atual. Você precisa estar na pasta principal do projeto, aquela que contém os dois itens.
+
+**Não execute `docker build` dentro da pasta `website`.** Execute-o na pasta principal do projeto.
 
 ## Problema 1 – `docker` não foi encontrado
 
@@ -1261,8 +1525,8 @@ Verifique:
 
 1. A EC2 está ligada?
 2. O IP público está correto?
-3. Você colocou `:8081` no endereço?
-4. O Security Group permite entrada TCP na porta 8081?
+3. Você colocou `:8080` no endereço?
+4. O Security Group permite entrada TCP na porta 8080?
 5. O container está em execução?
 
 Confira:
@@ -1277,7 +1541,7 @@ Se não aparecer, verifique também os containers parados:
 sudo docker ps -a
 ```
 
-## Problema 5 – A porta 8081 já está em uso
+## Problema 5 – A porta 8080 já está em uso
 
 Pode existir outro container ou serviço utilizando a porta.
 
@@ -1382,12 +1646,21 @@ Para excluir a instância EC2, faça isso pelo Console AWS somente com autoriza�
 
 Marque cada etapa quando terminar:
 
+- [ ] Abri o VS Code e carreguei a pasta do projeto.
+- [ ] Abri o terminal integrado do VS Code e conferi o Docker.
+- [ ] Instalei ou conferi o Git no Windows.
+- [ ] Usei `git clone` para obter o repositório do GitHub.
+- [ ] Abri a pasta clonada no VS Code.
+- [ ] Entendi para que servem `git clone` e `git pull`.
 - [ ] Conferi os arquivos do site.
 - [ ] Entendi para que serve o Dockerfile.
 - [ ] Criei o Dockerfile.
 - [ ] Entendi as instruções `FROM`, `COPY`, `EXPOSE` e `CMD`.
-- [ ] Construí a imagem Docker.
-- [ ] Criei e testei um container no computador.
+- [ ] Construí a imagem Docker no computador.
+- [ ] Executei o container localmente com `docker run`.
+- [ ] Conferi o container com `docker ps`.
+- [ ] Abri o site em `http://localhost:8080` e verifiquei seu funcionamento.
+- [ ] Consultei os logs, se necessário, e parei o container local.
 - [ ] Criei ou recebi uma instância EC2 Ubuntu.
 - [ ] Configurei o Security Group.
 - [ ] Acessei a EC2 por SSH.
@@ -1395,7 +1668,7 @@ Marque cada etapa quando terminar:
 - [ ] Enviei os arquivos para a EC2.
 - [ ] Construí a imagem no servidor.
 - [ ] Executei o container na EC2.
-- [ ] Acessei o site pelo IP público e pela porta 8081.
+- [ ] Acessei o site pelo IP público e pela porta 8080.
 - [ ] Consultei os logs e verifiquei o container.
 
 ---
@@ -1425,6 +1698,10 @@ Marque cada etapa quando terminar:
 | `systemctl` | Gerenciador de serviços do Linux |
 | `SSH` | Acesso remoto seguro |
 | `SCP` | Cópia segura de arquivos via SSH |
+| `Git` | Ferramenta para controlar versões e obter atualizações de projetos |
+| `GitHub` | Serviço online que hospeda repositórios Git |
+| `git clone` | Cria uma cópia local de um repositório remoto |
+| `git pull` | Busca e integra atualizações do repositório remoto |
 | `EC2` | Máquina virtual na AWS |
 | `IP público` | Endereço usado para alcançar a EC2 pela internet |
 | `localhost` | A própria máquina em que o comando está sendo executado |
@@ -1446,7 +1723,7 @@ Você aprendeu que:
 5. O **Ubuntu** é o sistema operacional da EC2.
 6. O **SSH** permite administrar o servidor remotamente.
 7. O **Security Group** controla o tráfego que chega à EC2.
-8. O parâmetro `-p 8081:80` encaminha a porta 8081 do servidor para a porta 80 do container.
+8. O parâmetro `-p 8080:80` encaminha a porta 8080 do servidor para a porta 80 do container.
 
 **Parabéns! Você realizou seu primeiro deploy manual com Docker e AWS EC2.**
 
