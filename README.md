@@ -1178,6 +1178,38 @@ ls -la website
 
 Se os arquivos não estiverem no local correto, corrija a transferência antes de continuar.
 
+## 10.4 Ajustar as permissões dos arquivos do site
+
+Antes de construir a imagem na EC2, vamos garantir que o Nginx consiga acessar os arquivos de HTML, CSS, JavaScript e imagens.
+
+No Linux, as permissões de uma pasta podem impedir que o servidor web acesse seu conteúdo. Por exemplo, a permissão `drwx------` permite o acesso somente ao proprietário da pasta. Se isso acontecer com as pastas `css`, `js` ou `assets`, o HTML poderá abrir, mas o navegador não conseguirá carregar os estilos, scripts ou imagens.
+
+Na EC2, ainda dentro de `~/laboratorio-cetepi`, execute:
+
+```bash
+sudo chmod -R a+rX website/
+```
+
+Entenda cada parte:
+
+- `sudo`: executa o comando com privilégios administrativos.
+- `chmod`: altera as permissões de arquivos e pastas.
+- `-R`: aplica a alteração recursivamente, incluindo as subpastas.
+- `a`: significa *all* (todos os usuários).
+- `+r`: adiciona permissão de leitura.
+- `X`: adiciona permissão de acesso/execução aos diretórios e mantém a execução em arquivos que já tinham essa permissão.
+- `website/`: indica a pasta do site que receberá o ajuste.
+
+Esse comando permite que o Nginx leia os arquivos e acesse as pastas necessárias. Ele não concede permissão de escrita a todos os usuários.
+
+Para conferir as permissões, execute:
+
+```bash
+ls -la website
+```
+
+As pastas do site devem permitir leitura e acesso por outros usuários, e não apresentar somente permissões do proprietário, como `drwx------`.
+
 ---
 
 # 11. Construir a imagem na EC2
@@ -1226,27 +1258,27 @@ Procure a imagem `laboratorio-cetepi` com a tag `v1`.
 
 ## 12.1 Iniciar o container
 
-Execute:
+A imagem `laboratorio-cetepi:v1` já foi construída na etapa anterior. Agora vamos utilizá-la para criar e iniciar um container.
+
+No terminal SSH da EC2, execute:
 
 ```bash
-sudo docker run -d --name laboratorio-cetepi --restart unless-stopped -p 80:80 laboratorio-cetepi:v1
+sudo docker run -d --name laboratorio-cetepi -p 80:80 laboratorio-cetepi:v1
 ```
 
-Agora vamos entender cada parte, sem pular nenhuma:
+Agora vamos entender cada parte do comando:
 
-- `sudo`: executa com privilégios administrativos.
-- `docker`: chama o Docker.
-- `run`: cria e inicia um container a partir de uma imagem.
-- `-d`: executa em segundo plano (*detached*). O terminal fica livre.
-- `--name`: permite escolher o nome do container.
-- `laboratorio-cetepi`: nome que será atribuído ao container.
-- `--restart`: define a política de reinicialização do container.
-- `unless-stopped`: política que permite reiniciar o container automaticamente quando o Docker ou o servidor reiniciar, exceto se ele tiver sido parado manualmente.
-- `-p`: publica/mapeia uma porta do servidor para uma porta do container.
-- `80:80`: porta 80 da EC2 encaminhada para a porta 80 do container.
-- `laboratorio-cetepi:v1`: imagem e tag que serão utilizadas para criar o container.
+- `sudo`: executa o comando com privilégios administrativos.
+- `docker`: chama o programa Docker.
+- `run`: cria e inicia um novo container a partir de uma imagem.
+- `-d`: executa o container em segundo plano (*detached*), deixando o terminal livre.
+- `--name laboratorio-cetepi`: define `laboratorio-cetepi` como nome do container.
+- `-p 80:80`: publica a porta 80 da EC2 e encaminha as conexões para a porta 80 dentro do container.
+- `laboratorio-cetepi:v1`: indica a imagem que será utilizada. `laboratorio-cetepi` é o nome da imagem e `v1` é sua tag.
 
-### 12.2 Entender o mapeamento de portas 80:80
+**Atenção:** o comando cria um container a partir da imagem existente. Ele não constrói uma nova imagem. A construção foi feita na etapa 11 com `docker build`.
+
+## 12.2 Entender o mapeamento de portas `80:80`
 
 ```text
 -p 80:80
@@ -1256,17 +1288,15 @@ Agora vamos entender cada parte, sem pular nenhuma:
    +------- Porta 80 da EC2 (servidor)
 ```
 
-Quando o visitante digita:
+O primeiro `80` representa a porta da EC2. O segundo `80` representa a porta dentro do container, onde o Nginx recebe as solicitações.
 
-```text
-http://IP_PUBLICO_DA_EC2
-```
+Quando o visitante acessar o IP público da EC2 pelo navegador, o Docker encaminhará a conexão para o Nginx que está dentro do container.
 
-a conexão chega à porta 80 da EC2. O Docker encaminha a conexão para a porta 80 do container. O Nginx recebe a solicitação e entrega o site.
+**Importante para a atividade:** neste momento, a regra de entrada HTTP (porta 80) ainda não foi adicionada ao Security Group. Portanto, mesmo que o container esteja em execução, o acesso pelo navegador poderá não funcionar. A liberação dessa porta será feita posteriormente, durante a atividade de diagnóstico em sala.
 
-**Atenção:** para isso funcionar, a porta TCP 80 precisa estar liberada no Security Group da EC2.
+## 12.3 Conferir se o container está em execução
 
-## 12.3 Conferir o container
+Execute:
 
 ```bash
 sudo docker ps
@@ -1280,33 +1310,35 @@ Procure:
 - status: `Up`;
 - portas: algo semelhante a `0.0.0.0:80->80/tcp`.
 
-O trecho `0.0.0.0:80->80/tcp` indica que a porta 80 está publicada nas interfaces IPv4 do servidor e encaminhada à porta 80 do container.
+O trecho `0.0.0.0:80->80/tcp` indica que a porta 80 da EC2 está publicada e encaminhada para a porta 80 do container.
 
-Para listar também containers parados:
+Para listar também containers parados, execute:
 
 ```bash
 sudo docker ps -a
 ```
 
-O `-a` significa *all* (todos).
+A opção `-a` significa *all* (todos).
 
 ## 12.4 Consultar os logs
+
+Para visualizar as mensagens registradas pelo container, execute:
 
 ```bash
 sudo docker logs laboratorio-cetepi
 ```
 
 - `logs`: mostra as mensagens registradas pelo container.
-- `laboratorio-cetepi`: nome do container que queremos consultar.
+- `laboratorio-cetepi`: identifica o container que queremos consultar.
 
-Para acompanhar continuamente:
+Para acompanhar continuamente as novas mensagens:
 
 ```bash
 sudo docker logs -f laboratorio-cetepi
 ```
 
-- `-f`: acompanha as novas mensagens.
-- `Ctrl + C`: encerra o acompanhamento dos logs. Não é o mesmo que parar o container.
+- `-f`: significa *follow* (acompanhar).
+- `Ctrl + C`: encerra a visualização dos logs. Isso não para o container.
 
 ---
 
@@ -1402,15 +1434,21 @@ Utilize novamente SCP ou WinSCP, conforme explicado na Fase 10. Envie o `Dockerf
 /home/ubuntu/laboratorio-cetepi
 ```
 
-## 14.2 Construir uma nova imagem com outra tag
+## 14.2 Ajustar as permissões e construir uma nova imagem
 
-Na EC2:
+Depois de enviar os arquivos atualizados, repita o ajuste de permissões na EC2. Isso evita que novos arquivos ou pastas voltem a impedir o acesso do Nginx:
+
+```bash
+sudo chmod -R a+rX website/
+```
+
+Em seguida, na EC2, entre na pasta do projeto:
 
 ```bash
 cd ~/laboratorio-cetepi
 ```
 
-Depois:
+Depois construa a nova imagem:
 
 ```bash
 sudo docker build -t laboratorio-cetepi:v2 .
